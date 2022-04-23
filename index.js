@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const ObjectId = require("mongodb").ObjectId;
+const { application } = require("express");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -40,6 +42,14 @@ async function run() {
       res.send(users);
     });
 
+    //sending specific  user by find a document proccess (for updateUser page in the client side)
+    app.get("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
     //post user:add new user
     //newUser(req.body) is the new data or doc to be inserted
     app.post("/user", async (req, res) => {
@@ -47,6 +57,26 @@ async function run() {
       console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result); //this res goes to client side as data(.then(data=>))
+    });
+
+    // update user
+    app.put("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedUser = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          name: updatedUser.name,
+          email: updatedUser.email,
+        },
+      };
+      const result = await userCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
     });
 
     //delete a user
